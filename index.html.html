@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>أدوات الـ PDF السريعة</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    body { background: #f1f5f9; color: #1e293b; padding: 15px 10px; display: flex; justify-content: center; }
+    .container { width: 100%; max-width: 650px; background: #ffffff; padding: 20px; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+    
+    header { text-align: center; margin-bottom: 15px; }
+    h1 { font-size: 20px; color: #0f172a; margin-bottom: 4px; }
+    .badge { display: inline-block; background: #ecfdf5; color: #059669; font-size: 11px; font-weight: bold; padding: 4px 12px; border-radius: 20px; border: 1px solid #a7f3d0; margin-top: 5px; }
+
+    /* التبويبات السريعة */
+    .tabs-nav { display: flex; gap: 4px; background: #f8fafc; padding: 4px; border-radius: 10px; border: 1px solid #e2e8f0; overflow-x: auto; margin-bottom: 15px; }
+    .tab-btn { flex: 1; min-width: 85px; padding: 8px 4px; border: none; background: transparent; border-radius: 7px; font-weight: bold; color: #64748b; font-size: 12px; cursor: pointer; white-space: nowrap; }
+    .tab-btn.active { background: #2563eb; color: #ffffff; }
+
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* منطقة الرفع */
+    .upload-zone { border: 2px dashed #93c5fd; background: #f0f7ff; border-radius: 12px; padding: 22px 10px; text-align: center; cursor: pointer; margin-bottom: 12px; }
+    .upload-zone:active { background: #e0e7ff; }
+    .upload-zone strong { color: #2563eb; font-size: 14px; display: block; margin-bottom: 4px; }
+    .upload-zone p { color: #64748b; font-size: 12px; }
+    input[type="file"] { display: none; }
+
+    .input-field, select.input-field { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; margin-bottom: 12px; outline: none; background: #fff; }
+    
+    .btn-action { width: 100%; background: #2563eb; color: #fff; border: none; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: bold; cursor: pointer; }
+    .btn-action:active { background: #1d4ed8; }
+    .btn-action:disabled { background: #cbd5e1; cursor: not-allowed; }
+
+    .status-msg { margin-top: 10px; text-align: center; font-size: 12px; font-weight: bold; }
+    .file-item { display: flex; justify-content: space-between; background: #f8fafc; border: 1px solid #e2e8f0; padding: 6px 10px; border-radius: 6px; font-size: 11px; margin-bottom: 5px; }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <header>
+      <h1>منصة أدوات الـ PDF السريعة</h1>
+      <div class="badge">🔒 مجانية 100% وبدون حدود | معالجة فورية خفيفة</div>
+    </header>
+
+    <!-- شريط الأدوات السريع -->
+    <div class="tabs-nav">
+      <button class="tab-btn active" onclick="switchTab('merge')">📑 دمج</button>
+      <button class="tab-btn" onclick="switchTab('split')">✂️ استخراج</button>
+      <button class="tab-btn" onclick="switchTab('delete')">🗑️ حذف</button>
+      <button class="tab-btn" onclick="switchTab('rotate')">🔄 تدوير</button>
+      <button class="tab-btn" onclick="switchTab('pagenum')">🔢 ترقيم</button>
+      <button class="tab-btn" onclick="switchTab('img2pdf')">🖼️ صور لـ PDF</button>
+    </div>
+
+    <!-- 1. دمج -->
+    <div class="tab-content active" id="tabMerge">
+      <div class="upload-zone" onclick="document.getElementById('fileMerge').click()">
+        <strong>اضغط لاختيار ملفات PDF</strong>
+        <p>اختر ملفين أو أكثر لدمجهم معاً</p>
+      </div>
+      <input type="file" id="fileMerge" multiple accept="application/pdf">
+      <div id="mergeList" style="max-height: 120px; overflow-y: auto; margin-bottom: 10px;"></div>
+      <button class="btn-action" id="mergeBtn" disabled onclick="executeMerge()">دمج وتحميل الملف</button>
+      <div class="status-msg" id="mergeMsg"></div>
+    </div>
+
+    <!-- 2. استخراج -->
+    <div class="tab-content" id="tabSplit">
+      <div class="upload-zone" onclick="document.getElementById('fileSplit').click()">
+        <strong id="splitName">اضغط لاختيار ملف PDF</strong>
+        <p>استخراج صفحات محددة في ملف جديد</p>
+      </div>
+      <input type="file" id="fileSplit" accept="application/pdf">
+      <div id="splitBox" style="display: none;">
+        <input type="text" id="splitPages" class="input-field" placeholder="مثال: 1-3 أو 1,4">
+      </div>
+      <button class="btn-action" id="splitBtn" disabled onclick="executeSplit()">استخراج وتحميل</button>
+      <div class="status-msg" id="splitMsg"></div>
+    </div>
+
+    <!-- 3. حذف -->
+    <div class="tab-content" id="tabDelete">
+      <div class="upload-zone" onclick="document.getElementById('fileDelete').click()">
+        <strong id="deleteName">اضغط لاختيار ملف PDF</strong>
+        <p>حذف صفحات معينة وتنزيل الباقي</p>
+      </div>
+      <input type="file" id="fileDelete" accept="application/pdf">
+      <div id="deleteBox" style="display: none;">
+        <input type="text" id="deletePages" class="input-field" placeholder="الصفحات المراد حذفها (مثال: 2 أو 3-5)">
+      </div>
+      <button class="btn-action" id="deleteBtn" disabled onclick="executeDelete()">حذف الصفحات وتحميل</button>
+      <div class="status-msg" id="deleteMsg"></div>
+    </div>
+
+    <!-- 4. تدوير -->
+    <div class="tab-content" id="tabRotate">
+      <div class="upload-zone" onclick="document.getElementById('fileRotate').click()">
+        <strong id="rotateName">اضغط لاختيار ملف PDF</strong>
+        <p>تدوير الصفحات المقلوبة</p>
+      </div>
+      <input type="file" id="fileRotate" accept="application/pdf">
+      <div id="rotateBox" style="display: none;">
+        <select id="rotateAngle" class="input-field">
+          <option value="90">90 درجة مع عقارب الساعة ↻</option>
+          <option value="180">180 درجة (رأساً على عقب) ↺</option>
+          <option value="270">270 درجة ↺</option>
+        </select>
+      </div>
+      <button class="btn-action" id="rotateBtn" disabled onclick="executeRotate()">تدوير وتحميل</button>
+      <div class="status-msg" id="rotateMsg"></div>
+    </div>
+
+    <!-- 5. ترقيم -->
+    <div class="tab-content" id="tabPageNum">
+      <div class="upload-zone" onclick="document.getElementById('filePageNum').click()">
+        <strong id="pageNumName">اضغط لاختيار ملف PDF</strong>
+        <p>إضافة أرقام الصفحات بالأسفل تلقائياً</p>
+      </div>
+      <input type="file" id="filePageNum" accept="application/pdf">
+      <button class="btn-action" id="pageNumBtn" disabled onclick="executePageNumbers()">إضافة الأرقام وتحميل</button>
+      <div class="status-msg" id="pageNumMsg"></div>
+    </div>
+
+    <!-- 6. صور إلى PDF -->
+    <div class="tab-content" id="tabImg2Pdf">
+      <div class="upload-zone" onclick="document.getElementById('fileImg').click()">
+        <strong>اضغط لاختيار الصور (JPG أو PNG)</strong>
+        <p>تحويل مجموعة صور إلى ملف PDF واحد</p>
+      </div>
+      <input type="file" id="fileImg" multiple accept="image/png, image/jpeg, image/jpg">
+      <div id="imgList" style="max-height: 120px; overflow-y: auto; margin-bottom: 10px;"></div>
+      <button class="btn-action" id="imgBtn" disabled onclick="executeImagesToPdf()">تحويل وتحميل PDF</button>
+      <div class="status-msg" id="imgMsg"></div>
+    </div>
+  </div>
+
+  <!-- تحميل مكتبة PDF-Lib فقط في النهاية دون تجميد الواجهة -->
+  <script src="https://cdn.jsdelivr.net/npm/pdf-lib@1.17.1/dist/pdf-lib.min.js" defer></script>
+
+  <script>
+    let mergeFiles = [];
+    let splitFile = null, splitTotal = 0;
+    let deleteFile = null, deleteTotal = 0;
+    let rotateFile = null;
+    let pageNumFile = null;
+    let imgFiles = [];
+
+    // التبديل اللحظي بين التبويبات بدون أي تهنيج
+    function switchTab(tab) {
+      const tabs = ['merge', 'split', 'delete', 'rotate', 'pagenum', 'img2pdf'];
+      document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+        btn.classList.toggle('active', tabs[i] === tab);
+      });
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      const map = { merge:'tabMerge', split:'tabSplit', delete:'tabDelete', rotate:'tabRotate', pagenum:'tabPageNum', img2pdf:'tabImg2Pdf' };
+      document.getElementById(map[tab]).classList.add('active');
+    }
+
+    // التأكد من جاهزية المكتبة
+    function isReady() {
+      if (!window.PDFLib) {
+        alert('جاري تجهيز محرك المعالجة، انتظر ثانية واحدة ثم أعد المحاولة.');
+        return false;
+      }
+      return true;
+    }
+
+    // 1. دمج
+    document.getElementById('fileMerge').addEventListener('change', (e) => {
+      mergeFiles = Array.from(e.target.files);
+      const list = document.getElementById('mergeList');
+      list.innerHTML = '';
+      if (mergeFiles.length < 2) {
+        document.getElementById('mergeBtn').disabled = true;
+        document.getElementById('mergeMsg').innerText = 'اختر ملفين على الأقل للدمج.';
+      } else {
+        document.getElementById('mergeBtn').disabled = false;
+        document.getElementById('mergeMsg').innerText = `تم اختيار ${mergeFiles.length} ملفات جاهزة.`;
+      }
+      mergeFiles.forEach((f, i) => {
+        list.innerHTML += `<div class="file-item"><span>${i+1}. ${f.name}</span><span>${(f.size/1024).toFixed(0)} KB</span></div>`;
+      });
+    });
+
+    async function executeMerge() {
+      if (!isReady()) return;
+      const msg = document.getElementById('mergeMsg');
+      msg.innerText = 'جارٍ الدمج...';
+      try {
+        const merged = await PDFLib.PDFDocument.create();
+        for (const f of mergeFiles) {
+          const pdf = await PDFLib.PDFDocument.load(await f.arrayBuffer());
+          const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+          pages.forEach(p => merged.addPage(p));
+        }
+        downloadBlob(await merged.save(), 'merged.pdf');
+        msg.innerText = '✅ تم الدمج بنجاح!';
+      } catch (e) { msg.innerText = 'حدث خطأ أثناء الدمج.'; }
+    }
+
+    // 2. استخراج
+    document.getElementById('fileSplit').addEventListener('change', async (e) => {
+      if (!e.target.files.length) return;
+      splitFile = e.target.files[0];
+      document.getElementById('splitName').innerText = splitFile.name;
+      try {
+        const pdf = await PDFLib.PDFDocument.load(await splitFile.arrayBuffer());
+        splitTotal = pdf.getPageCount();
+        document.getElementById('splitBox').style.display = 'block';
+        document.getElementById('splitPages').placeholder = `اكتب الصفحات (إجمالي: ${splitTotal})`;
+        document.getElementById('splitBtn').disabled = false;
+        document.getElementById('splitMsg').innerText = `الملف به ${splitTotal} صفحة.`;
+      } catch(err) { document.getElementById('splitMsg').innerText = 'تعذر قراءة الملف.'; }
+    });
+
+    async function executeSplit() {
+      if (!isReady()) return;
+      const text = document.getElementById('splitPages').value.trim();
+      if (!text) return alert('حدد الصفحات المطلوبة');
+      const msg = document.getElementById('splitMsg');
+      msg.innerText = 'جارٍ الاستخراج...';
+      try {
+        const src = await PDFLib.PDFDocument.load(await splitFile.arrayBuffer());
+        const out = await PDFLib.PDFDocument.create();
+        const pList = parseNumbers(text, splitTotal);
+        const copied = await out.copyPages(src, pList);
+        copied.forEach(p => out.addPage(p));
+        downloadBlob(await out.save(), 'extracted.pdf');
+        msg.innerText = '✅ تم الاستخراج بنجاح!';
+      } catch (e) { msg.innerText = 'تأكد من كتابة أرقام صحيحة.'; }
+    }
+
+    // 3. حذف
+    document.getElementById('fileDelete').addEventListener('change', async (e) => {
+      if (!e.target.files.length) return;
+      deleteFile = e.target.files[0];
+      document.getElementById('deleteName').innerText = deleteFile.name;
+      try {
+        const pdf = await PDFLib.PDFDocument.load(await deleteFile.arrayBuffer());
+        deleteTotal = pdf.getPageCount();
+        document.getElementById('deleteBox').style.display = 'block';
+        document.getElementById('deletePages').placeholder = `الصفحات المراد حذفها (إجمالي: ${deleteTotal})`;
+        document.getElementById('deleteBtn').disabled = false;
+      } catch(e) { document.getElementById('deleteMsg').innerText = 'تعذر قراءة الملف.'; }
+    });
+
+    async function executeDelete() {
+      if (!isReady()) return;
+      const text = document.getElementById('deletePages').value.trim();
+      if (!text) return alert('اكتب الصفحات المراد حذفها');
+      const msg = document.getElementById('deleteMsg');
+      msg.innerText = 'جارٍ الحذف...';
+      try {
+        const src = await PDFLib.PDFDocument.load(await deleteFile.arrayBuffer());
+        const out = await PDFLib.PDFDocument.create();
+        const toDel = new Set(parseNumbers(text, deleteTotal));
+        const keep = [];
+        for (let i = 0; i < deleteTotal; i++) if (!toDel.has(i)) keep.push(i);
+        const copied = await out.copyPages(src, keep);
+        copied.forEach(p => out.addPage(p));
+        downloadBlob(await out.save(), 'document_cleaned.pdf');
+        msg.innerText = '✅ تم حذف الصفحات بنجاح!';
+      } catch (e) { msg.innerText = 'حدث خطأ، تأكد من الأرقام.'; }
+    }
+
+    // 4. تدوير
+    document.getElementById('fileRotate').addEventListener('change', (e) => {
+      if (!e.target.files.length) return;
+      rotateFile = e.target.files[0];
+      document.getElementById('rotateName').innerText = rotateFile.name;
+      document.getElementById('rotateBox').style.display = 'block';
+      document.getElementById('rotateBtn').disabled = false;
+    });
+
+    async function executeRotate() {
+      if (!isReady()) return;
+      const deg = parseInt(document.getElementById('rotateAngle').value, 10);
+      const msg = document.getElementById('rotateMsg');
+      msg.innerText = 'جارٍ التدوير...';
+      try {
+        const pdf = await PDFLib.PDFDocument.load(await rotateFile.arrayBuffer());
+        pdf.getPages().forEach(p => {
+          p.setRotation(PDFLib.degrees((p.getRotation().angle + deg) % 360));
+        });
+        downloadBlob(await pdf.save(), 'rotated.pdf');
+        msg.innerText = '✅ تم التدوير بنجاح!';
+      } catch (e) { msg.innerText = 'تعذر التدوير.'; }
+    }
+
+    // 5. ترقيم
+    document.getElementById('filePageNum').addEventListener('change', (e) => {
+      if (!e.target.files.length) return;
+      pageNumFile = e.target.files[0];
+      document.getElementById('pageNumName').innerText = pageNumFile.name;
+      document.getElementById('pageNumBtn').disabled = false;
+    });
+
+    async function executePageNumbers() {
+      if (!isReady()) return;
+      const msg = document.getElementById('pageNumMsg');
+      msg.innerText = 'جارٍ الترقيم...';
+      try {
+        const pdf = await PDFLib.PDFDocument.load(await pageNumFile.arrayBuffer());
+        const font = await pdf.embedFont(PDFLib.StandardFonts.Helvetica);
+        const pages = pdf.getPages();
+        pages.forEach((p, i) => {
+          p.drawText(`${i + 1} / ${pages.length}`, {
+            x: p.getSize().width / 2 - 12,
+            y: 15,
+            size: 10,
+            font: font,
+            color: PDFLib.rgb(0.3, 0.3, 0.3)
+          });
+        });
+        downloadBlob(await pdf.save(), 'numbered.pdf');
+        msg.innerText = '✅ تم الترقيم بنجاح!';
+      } catch (e) { msg.innerText = 'تعذر ترقيم الملف.'; }
+    }
+
+    // 6. صور إلى PDF
+    document.getElementById('fileImg').addEventListener('change', (e) => {
+      imgFiles = Array.from(e.target.files);
+      const list = document.getElementById('imgList');
+      list.innerHTML = '';
+      if (!imgFiles.length) {
+        document.getElementById('imgBtn').disabled = true;
+      } else {
+        document.getElementById('imgBtn').disabled = false;
+        imgFiles.forEach((f, i) => {
+          list.innerHTML += `<div class="file-item"><span>${i+1}. ${f.name}</span></div>`;
+        });
+      }
+    });
+
+    async function executeImagesToPdf() {
+      if (!isReady()) return;
+      const msg = document.getElementById('imgMsg');
+      msg.innerText = 'جارٍ تحويل الصور...';
+      try {
+        const pdf = await PDFLib.PDFDocument.create();
+        for (const f of imgFiles) {
+          const buf = await f.arrayBuffer();
+          let img = (f.type.includes('png') || f.name.endsWith('.png')) ? await pdf.embedPng(buf) : await pdf.embedJpg(buf);
+          const page = pdf.addPage([img.width, img.height]);
+          page.drawImage(img, { x: 0, y: 0, width: img.width, height: img.height });
+        }
+        downloadBlob(await pdf.save(), 'images_converted.pdf');
+        msg.innerText = '✅ تم إنشاء وتحميل الملف!';
+      } catch (e) { msg.innerText = 'تأكد من صيغة الصور.'; }
+    }
+
+    function downloadBlob(bytes, name) {
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(new Blob([bytes], { type: 'application/pdf' }));
+      link.download = name;
+      link.click();
+    }
+
+    function parseNumbers(str, max) {
+      const set = new Set();
+      str.split(',').forEach(part => {
+        part = part.trim();
+        if (part.includes('-')) {
+          const [s, e] = part.split('-').map(Number);
+          if (s && e) for (let i = Math.min(s, e); i <= Math.max(s, e); i++) if (i >= 1 && i <= max) set.add(i - 1);
+        } else {
+          const n = Number(part);
+          if (n >= 1 && n <= max) set.add(n - 1);
+        }
+      });
+      return Array.from(set).sort((a, b) => a - b);
+    }
+  </script>
+</body>
+</html>
